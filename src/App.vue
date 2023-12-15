@@ -2,9 +2,15 @@
   <div>
     <h1>DUA Demo</h1>
     <h2>Example of the protocol sequence</h2>
-    <div id="firstRequest"></div>
+    <div id="firstRequest">
+      <div class="bodyText" id="firstRequestBody"></div>
+      <div class="headerText" id="firstRequestHeaders"></div>
+    </div>
     <br>
-    <div id="secondRequest"></div>
+    <div id="secondRequest">
+        <div class="bodyText" id="secondRequestBody"></div>
+        <div class="headerText" id="secondRequestHeaders"></div>
+    </div>
     <br>
     <button id="addText" @click="addText">{{ buttonText }}</button>
     <button @click="doReset">Reset</button>
@@ -21,6 +27,7 @@ export default {
       buttonText: "Send HTTP request",
       counter: 0,
       url: "http://localhost:8080/jakarta-example/resource",
+      displayedHeaders: ['date', 'content-type', 'www-authenticate'],
     };
   },
 
@@ -31,8 +38,8 @@ export default {
       if (this.counter == 0) {
 
         const { bodyData, headerData } = await this.fetchData(this.url);
-        document.getElementById('firstRequest').innerHTML += bodyData + "</br>";
-        document.getElementById('firstRequest').innerHTML += headerData;
+        document.getElementById('firstRequestBody').innerHTML += bodyData + "</br>";
+        document.getElementById('firstRequestHeaders').innerHTML += headerData;
         this.buttonText = "Send HTTP request with credential attached";
         this.counter += 1;
         return;
@@ -45,8 +52,8 @@ export default {
           },
         };
         const { bodyData, headerData } = await this.fetchData(this.url, options);
-        document.getElementById('secondRequest').innerHTML += bodyData + "</br>";
-        document.getElementById('secondRequest').innerHTML += headerData;
+        document.getElementById('secondRequestBody').innerHTML += bodyData + "</br>";
+        document.getElementById('secondRequestHeaders').innerHTML += headerData;
         document.getElementById('addText').style.display = "none";
         this.counter += 1;
         return;
@@ -65,10 +72,13 @@ export default {
       try {
         const response = await fetch(url, options);
         const bodyData = await response.text();
-        let headerData = '<b>Headers:</b></br>';
+        let headerData = '<b>Headers:</b></br><table style="width:90%">';
         response.headers.forEach((value, name) => {
-          headerData += `${name}: ${value}</br>`;
+          if (this.displayedHeaders.includes(name)) {
+            headerData += `<tr><th style="width:20%">${name}</th><th>${value}</th></tr>`;
+          }
         });
+        headerData += '</table>';
         return { bodyData, headerData };
       } catch (error) {
         console.error('Error during fetch:', error);
