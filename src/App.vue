@@ -10,23 +10,28 @@
       <div>
         <div v-if="outerKey.startsWith('request')">
         <div class="middleColumn">
-          <p>HTTP GET /exampleResource</p>
-          <b v-if="requestsMap.get(outerKey) != ''">Headers:</b><br/>
-          <details 
-          v-for="[innerKey, innerValue] in headersMap"><summary>{{ innerKey }}</summary><pre>{{ innerValue }}</pre></details>
+          <br v-if="!requestsMap.get(outerKey) != ''"/>
+          <br v-if="!requestsMap.get(outerKey) != ''"/>
+          <b>HTTP GET /exampleResource</b>
+          <div v-if="requestsMap.get(outerKey) != ''">
+            <pr>Headers:</pr><br/>
+            <details 
+            v-for="[innerKey, innerValue] in headersMap"><summary>{{ innerKey }}</summary><pre>{{ innerValue }}</pre></details>
+          </div>
         </div>  
-          <img class="arrow" src="./assets/right_solid_arrow_lila.svg" vertical-align="top"><br/><br/>
+          <img class="arrow" src="./assets/right_solid_arrow_lila.svg">
         </div>
 
         <div v-if="outerKey.startsWith('response')">
-          <img class="arrow" src="./assets/left_dashed_arrow_lila.svg"><br/>
+          <img class="arrow" src="./assets/left_dashed_arrow_lila.svg">
           <div class="middleColumn">
-            {{ this.responseText[outerKey.includes("1")?1:0] }}<br/>
-            <b>Headers:</b><br/>
+            <b>{{ this.responseText[outerKey.includes("5")?5:0] }}</b><br/>
+            <pr>Headers:</pr><br/>
             <details 
-            v-for="[innerKey, innerValue] in headersMap" :id="innerKey"><summary>{{ innerKey }}</summary><pre>{{ innerValue }}</pre><br/></details>
+            v-for="[innerKey, innerValue] in headersMap" :id="innerKey"><summary>{{ innerKey }}</summary><pre>{{ innerValue }}</pre><br/></details><br/>
           </div>
         </div>
+        <div class="spacer"><br/></div>
       </div>
       <div>
         <img v-if="outerKey.startsWith('request')" src="./assets/cloud_lila.png" alt="Server Icon" width="50" height="50">
@@ -35,11 +40,9 @@
     </div>
     <br/>
     <div>
-      <div>
-        <p>Next Action: {{this.buttonText}}</p>
-        <button id="addText" @click="addText">Okay</button>       
-        <button @click="doReset">Reset</button>
-      </div>
+      <p>Next action in sequence: {{ this.tempActionText }}</p>
+      <button id="addText" @click="addText">{{ this.tempButtonText }}</button>       
+      <button @click="doReset">Reset</button>
     </div>
   </div>
 </template>
@@ -49,16 +52,36 @@ import { Parser, Store } from "n3";
 import { toTTL } from "@/lib/n3Extensions";
 
 
+
 export default {
 
   data() {
     return {
-      buttonText: "Send HTTP request",
+      tempActionText: "Send HTTP request",
+      tempButtonText: "Send request",
       counter: 0,
       url: "http://localhost:8080/jakarta-example/resource",
       displayedHeaders: ['date', 'content-type', 'www-authenticate', 'authn-data'],
       requestsMap: new Map([["request0", ""]]),
       responseText: [],
+      actionText: [
+        "Send HTTP request",
+        "View www-authenticate header",
+        "Create credential required by www-authenticate header",
+        "Create new request",
+        "Attach required credential as a header",
+        "Send request with attached credential",
+        "View agreements in authn-data header",
+        "You reached the end of protocol. Reset?"],
+      buttonText: [
+        "Send request",
+        "View header",
+        "Create credential",
+        "Create request",
+        "Attach credential",
+        "Send request",
+        "View agreements",
+        "Reset"],
       prefixes: {
         acl: 'http://www.w3.org/ns/auth/acl#',
         acp: 'http://www.w3.org/ns/solid/acp#',
@@ -76,10 +99,9 @@ export default {
         sh: 'http://www.w3.org/ns/shacl#',
         xsd: 'http://www.w3.org/2001/XMLSchema#',
       },
-      authnData: "@prefix ex: <http://example.org> . @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> . ex:Valentin a ex:Person ; a ex:Human .",
+      authnData: "@prefix ex: <http://example.org> . @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> . ex:Valentin rdf:type ex:Person ; rdf:type ex:Human .",
     };
   },
-
 
   methods: {
 
@@ -89,39 +111,36 @@ export default {
       if (this.counter == 0) {
         this.requestsMap.set("response" + this.counter, new Map())
         await this.fetchData(this.counter, "response" + this.counter, this.url);
-        this.buttonText = "View www-authenticate header";
-        this.counter += 1;
+        this.updateTextCounter();
         return;
       }
 
       else if (this.counter == 1) {
         const element = document.getElementById('www-authenticate');
         element.open = true;
-        this.buttonText = "Create credential required by www-authenticate header";
-        this.counter += 1;
+        this.updateTextCounter();
         return;
       }
 
       else if (this.counter == 2) {
-        this.buttonText = "Create new request";
-        this.counter += 1;
+        const element = document.getElementById('www-authenticate');
+        element.open = false;
+        this.updateTextCounter();
         return;
       }
 
       else if (this.counter == 3) { 
-        this.requestsMap.set("request" + this.counter)
-        this.buttonText = "Attach required credential as a header";
-        this.counter += 1;
+        this.requestsMap.set("request" + this.counter);
+        this.updateTextCounter();
         return;
       }
 
       else if (this.counter == 4) {
         const rdfGraph = await this.parseRdfData(this.authnData);
         const formattedAuthnData = toTTL(rdfGraph.store, rdfGraph.prefixes)
-        this.requestsMap.delete("request" + (this.counter-1))
-        this.requestsMap.set("request" + this.counter, new Map([["authn-data", formattedAuthnData]]))
-        this.buttonText = "Send request with attached credential";
-        this.counter += 1;
+        this.requestsMap.delete("request" + (this.counter - 1));
+        this.requestsMap.set("request" + this.counter, new Map([["authn-data", formattedAuthnData]]));
+        this.updateTextCounter();
         return;
       }
 
@@ -130,12 +149,11 @@ export default {
         const options = {
           method: "GET",
           headers: {
-            "authn-data": "@prefix ex: <http://example.org> . @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> . ex:Valentin a ex:Person ; a ex:Human .",
+            "authn-data": this.authnData,
           },
         };
         await this.fetchData(this.counter, "response" + this.counter, this.url, options);
-        this.buttonText = "View agreements in authn-data header";
-        this.counter += 1;
+        this.updateTextCounter();
         return;
       }
 
@@ -143,9 +161,16 @@ export default {
         const element = document.getElementById('authn-data');
         element.open = true;
         document.getElementById('addText').style.display = "none";
-        this.buttonText = "Reached end of protocol. Reset?";
+        this.updateTextCounter();
         return;
       }
+    },
+
+    updateTextCounter() {
+      this.tempButtonText = this.buttonText[this.counter+1];
+      this.tempActionText = this.actionText[this.counter+1];
+      this.counter += 1;
+      return;
     },
 
 
@@ -189,8 +214,9 @@ export default {
       this.requestsMap.clear();
       this.requestsMap.set("request0", "");
       document.getElementById('addText').style.display = "inline";
-      this.buttonText = "Send HTTP request";
       this.counter = 0;
+      this.tempActionText = this.actionText[this.counter];
+      this.tempButtonText = this.buttonText[this.counter];
     },
   },
 };
@@ -202,7 +228,7 @@ button {
     }
 .grid-container {
         display: grid;
-        grid-template-columns: 150px minmax(600px, 1fr) 150px;
+        grid-template-columns: 150px minmax(800px, 1fr) 150px;
         gap: 0px;
         padding: 0px;
     }
@@ -236,13 +262,8 @@ button {
     margin-left: 20px;
     text-align: left;
 }
-
-
 details{
-  max-width: 600px;
-}
-.arrow {
-  color: #646cff;
+  max-width: 700px;
 }
 pre {
     white-space: pre-wrap;       /* Since CSS 2.1 */
