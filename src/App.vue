@@ -1,10 +1,15 @@
 <template>
+  <Toast position="top-right" />
+  <Sidebar v-model:visible="visible" :header="sidebarHeader[this.counter]" position="right">
+          <p>{{ this.sidebarValue[this.counter] }}</p>
+      </Sidebar>
   <div>
     <h1>DUA Demo</h1>
     <h2>Click yourself through the protocol's sequence</h2>
     <div class="grid-container" v-for="[outerKey, headersMap] in requestsMap"> 
       <div>
-        <img v-if="outerKey.startsWith('request')" src="./assets/self-employed_lila.png" alt="User Icon" width="50" height="50">
+        <!-- <img v-if="outerKey.startsWith('request')" src="./assets/self-employed_lila.png" alt="User Icon" width="50" height="50"> -->
+        <i class="pi pi-user" v-if="outerKey.startsWith('request')"></i>
         <pre v-if="outerKey.startsWith('request')">You</pre>
       </div>
       <div>
@@ -14,9 +19,12 @@
           <br v-if="!requestsMap.get(outerKey) != ''"/>
           <b>HTTP GET /exampleResource</b>
           <div v-if="requestsMap.get(outerKey) != ''">
-            <pr>Headers:</pr><br/>
-            <details 
-            v-for="[innerKey, innerValue] in headersMap"><summary>{{ innerKey }}</summary><pre>{{ innerValue }}</pre></details>
+            <p>Headers:</p>
+              <Accordion :multiple="true" :key="outerKey">
+              <AccordionTab v-for="[innerKey, innerValue] in headersMap" :key="innerKey" :header="innerKey">
+                <pre>{{ innerValue }}</pre>
+              </AccordionTab>
+              </Accordion><br/>
           </div>
         </div>  
           <img class="arrow" src="./assets/right_solid_arrow_lila.svg">
@@ -26,23 +34,34 @@
           <img class="arrow" src="./assets/left_dashed_arrow_lila.svg">
           <div class="middleColumn">
             <b>{{ this.responseText[outerKey.includes("5")?5:0] }}</b><br/>
-            <pr>Headers:</pr><br/>
-            <details 
-            v-for="[innerKey, innerValue] in headersMap" :id="innerKey"><summary>{{ innerKey }}</summary><pre>{{ innerValue }}</pre><br/></details><br/>
+            <p>Headers:</p>
+            <Accordion v-model:activeIndex="this.active[outerKey.includes('5') ? 5 : 0]" :multiple="true" :key="outerKey">
+            <AccordionTab v-for="[innerKey, innerValue] in headersMap" :id="innerKey" :key="innerKey" :header="innerKey">
+              <pre>{{ innerValue }}</pre>
+            </AccordionTab>
+            </Accordion><br/>
           </div>
         </div>
         <div class="spacer"><br/></div>
       </div>
       <div>
-        <img v-if="outerKey.startsWith('request')" src="./assets/cloud_lila.png" alt="Server Icon" width="50" height="50">
+        <i class="pi pi-server" style="font-size: 4rem" v-if="outerKey.startsWith('request')"></i>
         <pre v-if="outerKey.startsWith('request')">Server</pre>
       </div>
     </div>
     <br/>
+    <Fieldset align="left" v-if="this.counter == 3 || this.counter == 4" :toggleable="true" legend="Credential"><pre>{{ this.authnData }}</pre></Fieldset>
     <div>
-      <p>Next action in sequence: {{ this.tempActionText }}</p>
-      <button id="addText" @click="addText">{{ this.tempButtonText }}</button>       
-      <button @click="doReset">Reset</button>
+      <p>Next action in sequence: {{ this.actionText[this.counter] }}</p>
+      <Button id="addText" @click="addText">{{ this.buttonText[this.counter] }}</Button>
+      <br/>
+      <br/>
+      <Button @click="doReset">Reset</Button>
+      <Button @click="visible = true">Show tutorial</Button>
+      <br/>
+      <br/>
+      <Checkbox v-model="disabledTutorial" inputId="tutorial" :binary="true"></Checkbox>
+      <label for="tutorial"> Disable tutorial </label>
     </div>
   </div>
 </template>
@@ -50,15 +69,17 @@
 <script>
 import { Parser, Store } from "n3";
 import { toTTL } from "@/lib/n3Extensions";
-
+import Accordion from "primevue/accordion";
+import AccordionTab from "primevue/accordiontab";
 
 
 export default {
 
   data() {
     return {
-      tempActionText: "Send HTTP request",
-      tempButtonText: "Send request",
+      disabledTutorial: false,
+      active: [[]],
+      visible: false,
       counter: 0,
       url: "http://localhost:8080/jakarta-example/resource",
       displayedHeaders: ['date', 'content-type', 'www-authenticate', 'authn-data'],
@@ -72,7 +93,7 @@ export default {
         "Attach required credential as a header",
         "Send request with attached credential",
         "View agreements in authn-data header",
-        "You reached the end of protocol. Reset?"],
+        "You reached the end of the protocol. Reset?"],
       buttonText: [
         "Send request",
         "View header",
@@ -99,7 +120,28 @@ export default {
         sh: 'http://www.w3.org/ns/shacl#',
         xsd: 'http://www.w3.org/2001/XMLSchema#',
       },
-      authnData: "@prefix ex: <http://example.org> . @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> . ex:Valentin rdf:type ex:Person ; rdf:type ex:Human .",
+      authnData: "@prefix ex: <http://example.org> .\n@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .\n\nex:Valentin rdf:type ex:Person ; rdf:type ex:Human .",
+      authnDataRDF: "@prefix ex: <http://example.org> . @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> . @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> . ex:Valentin rdf:type ex:Person ; rdf:type ex:Human .",
+      sidebarHeader: [
+        "Request",
+        "Response",
+        "Request",
+        "Response",
+        "Request",
+        "Response",
+        "Request",
+        "Response",
+      ],
+      sidebarValue: [
+        "You send a request to the server.",
+        "The server sends a response back to you.",
+        "You send a request to the server.",
+        "The server sends a response back to you.",
+        "You send a request to the server.",
+        "The server sends a response back to you.",
+        "You send a request to the server.",
+        "The server sends a response back to you.",
+      ],
     };
   },
 
@@ -108,6 +150,7 @@ export default {
 
     async addText() {
 
+      //Send request
       if (this.counter == 0) {
         this.requestsMap.set("response" + this.counter, new Map())
         await this.fetchData(this.counter, "response" + this.counter, this.url);
@@ -115,26 +158,29 @@ export default {
         return;
       }
 
+      //View header
       else if (this.counter == 1) {
-        const element = document.getElementById('www-authenticate');
-        element.open = true;
+        this.active[0].push(2);
         this.updateTextCounter();
         return;
       }
 
+      //Create credential
       else if (this.counter == 2) {
-        const element = document.getElementById('www-authenticate');
-        element.open = false;
+        this.active[0].pop(2);
+        this.$toast.add({ severity: 'success', summary: 'Success', detail: 'Credential created', life: 3000 });
         this.updateTextCounter();
         return;
       }
 
+      //Create request
       else if (this.counter == 3) { 
         this.requestsMap.set("request" + this.counter);
         this.updateTextCounter();
         return;
       }
 
+      //Attach credential
       else if (this.counter == 4) {
         const rdfGraph = await this.parseRdfData(this.authnData);
         const formattedAuthnData = toTTL(rdfGraph.store, rdfGraph.prefixes)
@@ -144,32 +190,36 @@ export default {
         return;
       }
 
+      //Send request
       else if (this.counter == 5) {
         this.requestsMap.set("response" + this.counter, new Map())
         const options = {
           method: "GET",
           headers: {
-            "authn-data": this.authnData,
+            "authn-data": this.authnDataRDF,
           },
         };
         await this.fetchData(this.counter, "response" + this.counter, this.url, options);
+        for(let i = 0; i < 5; i++) {
+          this.active.push([]);
+        }
         this.updateTextCounter();
         return;
       }
 
+      //View agreements
       else if (this.counter == 6) {
-        const element = document.getElementById('authn-data');
-        element.open = true;
+        this.active[5].push(2);
         document.getElementById('addText').style.display = "none";
         this.updateTextCounter();
         return;
       }
     },
 
+
     updateTextCounter() {
-      this.tempButtonText = this.buttonText[this.counter+1];
-      this.tempActionText = this.actionText[this.counter+1];
       this.counter += 1;
+      if(this.disabledTutorial != true) this.visible = true;
       return;
     },
 
@@ -210,6 +260,7 @@ export default {
       });
     },
 
+
     doReset() {
       this.requestsMap.clear();
       this.requestsMap.set("request0", "");
@@ -217,26 +268,30 @@ export default {
       this.counter = 0;
       this.tempActionText = this.actionText[this.counter];
       this.tempButtonText = this.buttonText[this.counter];
+      this.active = [[]];
     },
   },
 };
 </script>
 
 <style>
+
 button {
       margin-right: 10px;
-    }
+}
+
 .grid-container {
         display: grid;
         grid-template-columns: 150px minmax(800px, 1fr) 150px;
         gap: 0px;
         padding: 0px;
-    }
+}
+
 .grid-container > div {
 
     padding: 20px 0;
-    border-left: 1px solid #646cff;
-    border-right: 1px solid #646cff; 
+    border-left: 1px solid rgb(108 44 230);
+    border-right: 1px solid rgb(108 44 230); 
     word-wrap: break-word;
     overflow-wrap: break-word;
 }
@@ -244,32 +299,59 @@ button {
 .grid-container > div:first-child {
     border-left: none;
 }
+
 .grid-container > div:last-child {
     border-right: none;
 }
+
 .grid-container > div > p {
     margin-left: 20px;
 }
+
 .grid-container > .middleColumn {
     margin-left: 20px;
     text-align: left;
 }
+
 .grid-container > div > .middleColumn {
     margin-left: 20px;
     text-align: left;
 }
+
 .grid-container > div > div > .middleColumn {
     margin-left: 20px;
     text-align: left;
 }
-details{
-  max-width: 700px;
+
+i {
+  font-size: 4rem ;
+  color: #6C2CE6;
 }
+
 pre {
     white-space: pre-wrap;       /* Since CSS 2.1 */
     white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
     white-space: -pre-wrap;      /* Opera 4-6 */
     white-space: -o-pre-wrap;    /* Opera 7 */
-    word-wrap: break-word;       /* Internet Explorer 5.5+ */
+    word-wrap: break-word;
+    max-width: 700px;    /* Internet Explorer 5.5+ */
+    font-size: medium;
+}
+b {
+  white-space: pre-wrap;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+}
+#app {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
 }
 </style>
