@@ -6,11 +6,12 @@ import 'primevue/resources/themes/aura-light-purple/theme.css'
 import Button from "primevue/button"
 import Accordion from 'primevue/accordion';
 import AccordionTab from 'primevue/accordiontab';
-import Sidebar from 'primevue/sidebar';
+// import Sidebar from 'primevue/sidebar';
 import Toast from 'primevue/toast';
 import ToastService from 'primevue/toastservice';
 import Fieldset from 'primevue/fieldset';
-import Checkbox from 'primevue/checkbox';
+// import Checkbox from 'primevue/checkbox';
+import Toolbar from 'primevue/toolbar';
 import 'primeicons/primeicons.css'
 
 
@@ -23,8 +24,9 @@ app.use(ToastService);
 app.component('Button', Button);
 app.component('Accordion', Accordion);
 app.component('AccordionTab', AccordionTab);
-app.component('Sidebar', Sidebar);
+// app.component('Sidebar', Sidebar);
 app.component('Toast', Toast);
 app.component('Fieldset', Fieldset);
-app.component('Checkbox', Checkbox);
+// app.component('Checkbox', Checkbox);
+app.component('Toolbar', Toolbar);
 app.mount('#app');
