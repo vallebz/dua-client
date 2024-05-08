@@ -1,6 +1,6 @@
 # Data Usage Agreement Demo
 
-This is a demonstration of the Data Usage Agreement (DUA) system, based on the RDF Framework and Verifiable Credentials. The demo guides you through the process of accessing a resource on a server and viewing the agreements attached to the resource.
+This is a demonstration of the Data Usage Agreement (DUA) protocol, based on the RDF Framework and Verifiable Credentials. The demo guides you through the process of accessing a resource on a server and viewing the agreements attached to the resource.
 
 ## Features
 
