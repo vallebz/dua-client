@@ -3,7 +3,7 @@
   
   <div class="split left">
     <div>
-      <h1>DUA Demo</h1>
+      <h1>Data Usage Agreement Demo</h1>
       <div class="grid-container" v-for="[outerKey, headersMap] in requestsMap"> 
         <div>
           <i class="pi pi-user" v-if="outerKey.startsWith('request')"></i>
